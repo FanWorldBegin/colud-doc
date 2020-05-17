@@ -1,0 +1,94 @@
+import React, { useState , useEffect, useRef} from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faEdit, faTrash, faTimes } from '@fortawesome/free-solid-svg-icons'
+import { faMarkdown } from '@fortawesome/free-brands-svg-icons'
+import PropTypes from 'prop-types';
+
+const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
+	const [editStatus, setEditStatus] = useState(false) // 点击编辑按钮
+	const [value, setValue] = useState('')
+	const closeSearch = (e) => {
+		e.preventDefault();
+		setEditStatus(false)
+		setValue('')
+	}
+
+	//添加副作用--键盘事件
+	useEffect(() => {
+		const handleInputEvent = (event) => {
+			const { keyCode } = event
+			// 13 enter 27 esc
+			if(keyCode == 13 && editStatus) {
+				const editItem = files.find(file => file.id == editStatus)
+
+				onSaveEdit(editItem.id, value)
+				setEditStatus(false)
+				setValue('')
+			} else if(keyCode == 27 && editStatus) {
+				closeSearch(event)
+			}
+		} 
+		// 在按键时候添加事件绑定
+		document.addEventListener('keyup', handleInputEvent)
+
+		return () => {
+			// 注意销毁事件
+			document.removeEventListener('keyup', handleInputEvent)
+		}
+	})
+
+		
+	return (
+		<ul className='list-group list-group-flush'>
+		{
+			files.map(file => (
+				<li className="list-group-item bg-light d-flex align-items-center row " key={file.id}>
+				{ (file.id !== editStatus) &&  //展示普通界面
+					<>
+						<span className='col-2'><FontAwesomeIcon icon={faMarkdown}  title="MarkDown"  size="lg"/></span>
+						<span className="col-8 c-link" onClick={()=> {onFileClick(file.id)}}>{file.title}</span>
+						
+						{/* 点击编辑设置当前编辑ID，设置value为当前的title值 */}
+						<button className='col-1 icon-button' type="button"
+							onClick={()=> {setEditStatus(file.id); setValue(file.title)}}
+						>
+							<FontAwesomeIcon icon={faEdit}  title="编辑"  size="lg"/>
+						</button>
+
+						<span className='col-1' onClick={()=> {onFileDelete(file.id)}}>
+							<FontAwesomeIcon icon={faTrash}  title="删除"  size="lg"/>
+						</span>
+					</>
+				}
+				{
+					file.id == editStatus && 
+					<>
+					<input
+						className="form-control col-10"
+						value={value}
+						onChange={(e) =>{ setValue(e.target.value)}}
+					></input>
+					<button
+						type="button"
+						className="icon-button col-2"
+						onClick={closeSearch}
+					  // 可以通过node.current 获取节点
+					>
+
+						<FontAwesomeIcon icon={faTimes}  title="关闭"  size="lg"/>
+					</button>
+				</>
+				}
+				</li>
+			))
+		}
+		</ul>
+	)
+}
+FileList.propTypes = {
+	files: PropTypes.array,
+	onFileClick: PropTypes.func,
+	onFileDelete: PropTypes.func,
+	onSaveEdit: PropTypes.func,
+}
+export default FileList
