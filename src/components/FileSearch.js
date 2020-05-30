@@ -2,6 +2,7 @@ import React, { useState , useEffect, useRef} from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons'
 import PropTypes from 'prop-types';
+import useKeyPress from '../hooks/useKeyPress'
 
 const FileSearch = ( { title, onFileSearch }) => {
 	const [inputActive, setInputActive ] = useState(false);
@@ -9,30 +10,24 @@ const FileSearch = ( { title, onFileSearch }) => {
 
 	let node = useRef(null);
 
-	const closeSearch = (e) => {
-		e.preventDefault()
+	const enterPressed = useKeyPress(13)
+	const escPressed = useKeyPress(27)
+
+	const closeSearch = () => {
 		setInputActive(false)
 		setValue('')
+		onFileSearch('')
 	}
 	//添加副作用--键盘事件
 	useEffect(() => {
-		const handleInputEvent = (event) => {
-			const { keyCode } = event
-			// 13 enter 27 esc
-			if(keyCode == 13 && inputActive) {
-				onFileSearch(value)
-			} else if(keyCode == 27 && inputActive) {
-				closeSearch(event)
-			}
-		} 
-		// 在按键时候添加事件绑定
-		document.addEventListener('keyup', handleInputEvent)
 
-		return () => {
-			// 注意销毁事件
-			document.removeEventListener('keyup', handleInputEvent)
+		if (enterPressed && inputActive) {
+			onFileSearch(value)
 		}
-	})
+		if (escPressed && inputActive) {
+			closeSearch()
+		}
+	}, [enterPressed, escPressed])
 
 	useEffect(() => {
 		if(inputActive) {
@@ -42,7 +37,7 @@ const FileSearch = ( { title, onFileSearch }) => {
 
 
 	return (
-		<div className="alert alert-primary" role="alert">
+		<div className="alert alert-primary mb-0" role="alert">
 			{ !inputActive && 
 				<div className="d-flex justify-content-between align-items-center">
 					<span>{title}</span>

@@ -3,75 +3,111 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEdit, faTrash, faTimes } from '@fortawesome/free-solid-svg-icons'
 import { faMarkdown } from '@fortawesome/free-brands-svg-icons'
 import PropTypes from 'prop-types';
+import useKeyPress from '../hooks/useKeyPress'
 
 const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
-	const [editStatus, setEditStatus] = useState(false) // 点击编辑按钮
+	const [editStatus, setEditStatus] = useState(false) // 点击编辑按钮 记录是那一条数据
 	const [value, setValue] = useState('')
-	const closeSearch = (e) => {
-		e.preventDefault();
+	// 按键事件
+	const enterPressed = useKeyPress(13)
+	const escPressed = useKeyPress(27)
+
+	const closeSearch = (editItem) => {
 		setEditStatus(false)
 		setValue('')
+		//if we are editing a newly file, we should delete this file
+		if(editItem.isNew) {
+			// 新建时候点击叉关闭
+			onFileDelete(editItem.id)
+		}
 	}
 
 	//添加副作用--键盘事件
+	// useEffect(() => {
+	// 	const handleInputEvent = (event) => {
+	// 		const { keyCode } = event
+	// 		// 13 enter 27 esc
+	// 		if(keyCode == 13 && editStatus) {
+	// 			const editItem = files.find(file => file.id == editStatus)
+
+	// 			onSaveEdit(editItem.id, value)
+	// 			setEditStatus(false)
+	// 			setValue('')
+	// 		} else if(keyCode == 27 && editStatus) {
+	// 			closeSearch(event)
+	// 		}
+	// 	} 
+	// 	// 在按键时候添加事件绑定
+	// 	document.addEventListener('keyup', handleInputEvent)
+
+	// 	return () => {
+	// 		// 注意销毁事件
+	// 		document.removeEventListener('keyup', handleInputEvent)
+	// 	}
+	// })
+
 	useEffect(() => {
-		const handleInputEvent = (event) => {
-			const { keyCode } = event
-			// 13 enter 27 esc
-			if(keyCode == 13 && editStatus) {
-				const editItem = files.find(file => file.id == editStatus)
+		const editItem = files.find(file => file.id == editStatus)
+		// 按下回车键保存
+		if(enterPressed && editStatus && value.trim() !== '') {
+			console.log('保存文件')
+			// 找到这条数据
+			onSaveEdit(editItem.id, value)
+			setEditStatus(false)
+			setValue('')
+		}
 
-				onSaveEdit(editItem.id, value)
-				setEditStatus(false)
-				setValue('')
-			} else if(keyCode == 27 && editStatus) {
-				closeSearch(event)
-			}
-		} 
-		// 在按键时候添加事件绑定
-		document.addEventListener('keyup', handleInputEvent)
-
-		return () => {
-			// 注意销毁事件
-			document.removeEventListener('keyup', handleInputEvent)
+		if(escPressed && editStatus) {
+			closeSearch(editItem)
 		}
 	})
 
-		
+	// 每新建文件
+	useEffect(() => {
+		const newFile = files.find(file => file.isNew)
+		console.log('新建文件保存Effect')
+		if(newFile) {
+			setEditStatus(newFile.id)
+			setValue(newFile.title)
+		}
+	}, [files])
+	
 	return (
 		<ul className='list-group list-group-flush'>
 		{
 			files.map(file => (
-				<li className="list-group-item bg-light d-flex align-items-center row " key={file.id}>
-				{ (file.id !== editStatus) &&  //展示普通界面
+				<li className="list-group-item bg-light d-flex align-items-center row mx-0" key={file.id}>
+				{ (file.id !== editStatus && !file.isNew) &&  //展示普通界面
 					<>
 						<span className='col-2'><FontAwesomeIcon icon={faMarkdown}  title="MarkDown"  size="lg"/></span>
-						<span className="col-8 c-link" onClick={()=> {onFileClick(file.id)}}>{file.title}</span>
+						<span className="col-6 c-link" onClick={()=> {onFileClick(file.id)}}>{file.title}</span>
 						
 						{/* 点击编辑设置当前编辑ID，设置value为当前的title值 */}
-						<button className='col-1 icon-button' type="button"
+						<button className='col-2 icon-button' type="button"
 							onClick={()=> {setEditStatus(file.id); setValue(file.title)}}
 						>
 							<FontAwesomeIcon icon={faEdit}  title="编辑"  size="lg"/>
 						</button>
 
-						<span className='col-1' onClick={()=> {onFileDelete(file.id)}}>
+						<span className='col-2' onClick={()=> {onFileDelete(file.id)}}>
 							<FontAwesomeIcon icon={faTrash}  title="删除"  size="lg"/>
 						</span>
 					</>
 				}
 				{
-					file.id == editStatus && 
+					//  展示编辑框
+					(file.id == editStatus || file.isNew) && 
 					<>
 					<input
 						className="form-control col-10"
 						value={value}
+						placeholder='请输入文件名称'
 						onChange={(e) =>{ setValue(e.target.value)}}
 					></input>
 					<button
 						type="button"
 						className="icon-button col-2"
-						onClick={closeSearch}
+						onClick={() => {closeSearch(file)}}
 					  // 可以通过node.current 获取节点
 					>
 
