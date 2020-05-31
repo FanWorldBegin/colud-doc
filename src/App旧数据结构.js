@@ -11,18 +11,16 @@ import { faPlus, faFileImport } from '@fortawesome/free-solid-svg-icons'
 import SimpleMDE from "react-simplemde-editor";
 import "easymde/dist/easymde.min.css";
 import { v4 as uuidv4 } from 'uuid';
-import {flattenArr, objToArr} from './utils/hepler'
 
 function App() {
-  const [files, setFiles ] = useState(flattenArr(defaultFiles))
-  console.log('files', files)
+  const [files, setFiles ] = useState(defaultFiles)
   const [ activeFileID, setActiveFileID ] = useState('')
   const [ openedFileIDs, setOpenedFileIDs ] = useState([])
   const [ unsavedFileIDs, setUnsavedFileIDs ] = useState([])
   const [searchedFiles, setSearchedFiles] = useState([])
-  // 数组类型的
-  const filesArr = objToArr(files);
-  console.log('filesArray', filesArr)
+  const openedFiles = openedFileIDs.map( openID => {
+    return files.find(file => file.id == openID)
+  }) // 获取开启的tab信息
 
   // 添加处理数据的方法
   //1.点击list右侧出现tab
@@ -55,11 +53,15 @@ function App() {
   }
   //4.SimpleMDE onChange a.设置小红点 b.更新files 中的body
   const fileChange = (id, value) =>{
-    //newFile 不能直接在state上修改，要生成新的对象
-    const newFile ={...files[id], body:value}
-
-    // 设置新的file
-    setFiles({...files, [id]: newFile})
+    //1.loop through file array to update to new value
+    const newFiles = files.map(file => {
+      if(file.id == id) {
+        file.body = value
+      }
+      return file
+    })
+    // 设置新的文件body
+    setFiles(newFiles)
     // update unsavedIDs
     if(!unsavedFileIDs.includes(id)) {
       setUnsavedFileIDs([...unsavedFileIDs, id])
@@ -69,22 +71,29 @@ function App() {
   //5.侧边栏删除
   const deleteFile = (id) => {
     // filter out the current file id
-   delete files[id]
-    setFiles(files)
+    const newFiles = files.filter(file => file.id !== id)
+    setFiles(newFiles)
     // close the tab if  opened
     tabClose(id)
   }
   //6.侧边栏编辑
   const updateFileName = (id, title) => {
-    const modifiedFile = { ...files[id], title, isNew: false}
+    // loop through files and update the title
+    const newFiles = files.map(file => {
+      if(file.id == id) {
+        file.title = title
+        file.isNew = false
+      }
+      return file
+    })
     console.log('侧边栏编辑')
-    setFiles({...files, [id]: modifiedFile})
+    setFiles(newFiles)
   }
 
   // 7.搜索
   const fileSearch = (keyword) => {
     //fileter out the new list base on the keyword
-    const newFiles = filesArr.filter(file => {
+    const newFiles = files.filter(file => {
       // 注意过滤空格
       return file.title.includes(keyword.trim())
     })
@@ -96,24 +105,24 @@ function App() {
   const createNewFile = () => {
     //debugger
     const newID = uuidv4()
+    const newFiles = [
+      ...files, 
+      {
+        id: newID,
+        title: '',
+        body: '## 请输入MarkDown',
+        createAt: new Date().getTime(),
+        isNew: true,
 
-    const newFile = {
-      id: newID,
-      title: '',
-      body: '## 请输入MarkDown',
-      createAt: new Date().getTime(),
-      isNew: true,
-    }
+      }
+    ]
     console.log('新建文件')
-    setFiles({...files, [newID]: newFile})
+    setFiles(newFiles)
   }
   // 获取当前激活File
-  const activeFile = files[activeFileID] // 获取开启的tab信息
-  const openedFiles = openedFileIDs.map( openID => {
-    return files[openID]
-  }) // 获取开启的tab信息
+  const activeFile = files.find(file => file.id == activeFileID) // 获取开启的tab信息
 
-  const fileListArr = (searchedFiles.length > 0) ? searchedFiles : filesArr;
+  const fileListArr = (searchedFiles.length > 0) ? searchedFiles : files;
 
   return (
     <div className="App container-fluid px-0">
