@@ -26,3 +26,22 @@ export const objToArr = (obj) => {
  */
 
 
+export const getParentNode = (node, parentClassName) => {
+	let current = node
+  
+	while(current !== null) {
+		// 判断一个节点是否有class classList
+		if(current.classList.contains(parentClassName)) {
+			return current
+		}
+		// 拿到父节点
+		current = current.parentNode
+	}
+
+	return false // 都没有
+}
+
+export const timeStampToString = (timeStamp => {
+	const date = new Date()
+	return date.toLocaleDateString() + date.toLocaleTimeString()
+})
