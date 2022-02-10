@@ -14,7 +14,7 @@
     "concurrently": "^5.2.0",
     "cra-template": "1.0.3",
     "electron-store": "^5.1.1",
-    "node-sass": "^4.14.1",
+    "node-sass": "^7.0.0",
     "qiniu": "^7.3.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
